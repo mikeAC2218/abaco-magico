@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ábaco Mágico para Niños</title>
+  <style>
+    :root {
+      --bg1: #f5f8ff;
+      --bg2: #eaf3ff;
+      --frame: #e11d48;
+      --rod: #9ca3af;
+      --text: #0f172a;
+      --muted: #475569;
+      --shadow: 0 8px 24px rgba(0,0,0,.15);
+      --success: #10b981;
+      --error: #ef4444;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html, body {
+      height: 100%;
+      font-family: "Nunito", "Baloo 2", "Fredoka", system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 10% 10%, var(--bg2) 0%, var(--bg1) 60%, #ffffff 100%);
+    }
+    
+    .wrap {
+      display: flex;
+      gap: 18px;
+      padding: 18px;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: 100%;
+    }
+    
+    @media (max-width: 980px) {
+      .wrap {
+        flex-direction: column;
+      }
+      #configPanel {
+        width: auto;
+      }
+    }
+    
+    .panel {
+      background: #ffffff;
+      border: 3px solid #fde2e7;
+      border-radius: 20px;
+      padding: 16px 16px 18px;
+      box-shadow: var(--shadow);
+    }
+    
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .panel h2::before {
+      content: "🧮";
+    }
+    
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    .abacus {
+      position: relative;
+      height: 600px;
+      min-height: 460px;
+      width: 100%;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #fff5f5;
+      border: 12px solid var(--frame);
+      box-shadow: var(--shadow);
+    }
+    
+    .frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    
+    .separator-v {
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 50%;
+      width: 6px;
+      transform: translateX(-50%);
+      background: #ffffff;
+      border-radius: 3px;
+      box-shadow: inset 0 0 0 2px #fecdd3, 0 0 0 4px #fecdd3;
+    }
+    
+    .rows {
+      position: absolute;
+      inset: 26px;
+      display: grid;
+      grid-auto-rows: 1fr;
+      gap: 22px;
+    }
+    
+    .row {
+      position: relative;
+      border-radius: 16px;
+    }
+    
+    .rod-line {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      top: 50%;
+      height: 6px;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, #cbd5e1, var(--rod), #cbd5e1);
+      border-radius: 3px;
+      box-shadow: inset 0 2px 2px #ffffff, inset 0 -1px 2px #00000022;
+    }
+    
+    .side-label {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 800;
+      font-size: 16px;
+      color: #0f172a;
+      background: #fff;
+      border: 2px dashed #fecdd3;
+      padding: 6px 10px;
+      border-radius: 999px;
+      box-shadow: 0 2px 0 #fecdd3;
+    }
+    
+    .label-left {
+      left: 6px;
+    }
+    
+    .label-right {
+      right: 6px;
+    }
+    
+    .bead {
+      --size: 36px;
+      position: absolute;
+      top: 50%;
+      transform: translate(0, -50%);
+      width: var(--size);
+      height: var(--size);
+      border-radius: 999px;
+      cursor: pointer;
+      background: radial-gradient(120% 120% at 30% 30%, #fff8 0, #fff0 48%);
+      box-shadow: 0 6px 16px rgba(0,0,0,.25), inset 0 -4px 10px rgba(0,0,0,.25), inset 0 3px 8px rgba(255,255,255,.3);
+      border: 2px solid #0003;
+      touch-action: none;
+      user-select: none;
+      transition: all .2s ease;
+    }
+    
+    .bead[data-active="true"] {
+      transform: translate(0,-50%) scale(1.06);
+      box-shadow: 0 10px 22px rgba(0,0,0,.28), 0 0 0 4px #22d3ee55, inset 0 -4px 10px rgba(0,0,0,.25), inset 0 3px 8px rgba(255,255,255,.35);
+    }
+    
+    .controls {
+      display: grid;
+      gap: 10px;
+    }
+    
+    .rowc {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .pill {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      padding: 10px 12px;
+      background: #fff;
+      border: 2px solid #fecdd3;
+      border-radius: 999px;
+      box-shadow: 0 2px 0 #fecdd3;
+    }
+    
+    .btn {
+      appearance: none;
+      border: none;
+      background: linear-gradient(180deg, #fb7185, #e11d48);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .btn:active {
+      transform: translateY(1px);
+    }
+    
+    .btn.secondary {
+      background: linear-gradient(180deg, #fde68a, #f59e0b);
+      color: #4b5563;
+    }
+    
+    .btn.success {
+      background: linear-gradient(180deg, #6ee7b7, var(--success));
+      color: white;
+    }
+    
+    .btn.info {
+      background: linear-gradient(180deg, #93c5fd, #3b82f6);
+      color: white;
+    }
+    
+    .readout {
+      display: grid;
+      gap: 10px;
+    }
+    
+    .big {
+      font-variant-numeric: tabular-nums;
+      font-family: "Baloo 2", "Nunito", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 900;
+      font-size: 32px;
+      letter-spacing: .5px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      background: #fff;
+      border: 2px solid #fecdd3;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    th, td {
+      border-bottom: 1px solid #ffe4e6;
+      padding: 8px 10px;
+      text-align: right;
+      font-weight: 700;
+    }
+    
+    th:first-child, td:first-child {
+      text-align: left;
+    }
+    
+    #abacusPanel {
+      order: 1;
+      flex: 1;
+    }
+    
+    #configPanel {
+      order: 2;
+      width: 460px;
+    }
+    
+    .number-display {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      border: 2px solid #e2e8f0;
+    }
+    
+    .number-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      position: relative;
+    }
+    
+    .number-input input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    .tutorial {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 12px;
+      border-left: 4px solid #0ea5e9;
+    }
+    
+    .tutorial h3 {
+      margin: 0 0 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .tutorial h3::before {
+      content: "💡";
+    }
+    
+    .tutorial p {
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .feedback {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 16px;
+      background: var(--success);
+      color: white;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .feedback.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .feedback.error {
+      background: var(--error);
+    }
+    
+    .instructions {
+      margin-top: 20px;
+      padding: 16px;
+      background: #fef7ed;
+      border-radius: 12px;
+      border-left: 4px solid #f59e0b;
+    }
+    
+    .instructions h3 {
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .instructions h3::before {
+      content: "📝";
+    }
+    
+    .instructions p {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+    
+    .magnitude-inputs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .magnitude-input {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .magnitude-input label {
+      font-weight: bold;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    
+    .magnitude-input input {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 16px;
+    }
+    
+    .magnitude-inputs.hidden input {
+      color: transparent;
+      text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    
+    .total-display {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-radius: 12px;
+      border: 2px solid #0ea5e9;
+      text-align: center;
+      display: none;
+    }
+    
+    .total-display.show {
+      display: block;
+    }
+    
+    .total-display .muted {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    
+    .total-display .big {
+      font-size: 24px;
+    }
+    
+    .breakdown-table {
+      margin-top: 15px;
+    }
+    
+    .toggle-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+    
+    .number-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .number-controls .btn {
+      flex: 1;
+    }
+    
+    /* Nuevos estilos para la sección de número formado */
+    .number-section {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f0fdf4;
+      border-radius: 12px;
+      border: 2px solid var(--success);
+    }
+    
+    .number-section h3 {
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .number-section h3::before {
+      content: "🔢";
+    }
+    
+    .tiles {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+      justify-content: center;
+    }
+    
+    .tile {
+      display: grid;
+      place-items: center;
+      min-width: 58px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      background: #fff;
+      border: 3px solid #fecdd3;
+      box-shadow: 0 3px 0 #fecdd3;
+      transition: all 0.3s ease;
+    }
+    
+    .tile .abbr {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 900;
+      letter-spacing: .5px;
+    }
+    
+    .tile .digit {
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    
+    .expanded {
+      min-height: 42px;
+      font-size: 24px;
+      font-weight: 900;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+      text-align: center;
+    }
+    
+    .result {
+      font-size: 40px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #0ea5e9;
+      text-align: center;
+      margin-top: 10px;
+    }
+    
+    details.collapsible {
+      border: 2px solid #fecdd3;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 0 #fecdd3;
+      margin-top: 10px;
+    }
+    
+    details.collapsible summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 8px 10px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    
+    details.collapsible[open] summary {
+      border-bottom: 1px dashed #ffe4e6;
+    }
+    
+    details.collapsible .content {
+      padding: 10px;
+    }
+    
+    .input-num {
+      width: 200px;
+      padding: 6px 10px;
+      border: 3px solid #fecdd3;
+      border-radius: 12px;
+      font-weight: 900;
+      letter-spacing: .5px;
+    }
+    
+    .input-num.ok {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 2px #22c55e33;
+    }
+    
+    .input-num.bad {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 2px #ef444433;
+    }
+    
+    .tile .digit-input {
+      width: 56px;
+      padding: 6px 8px;
+      text-align: center;
+      border: 3px solid #fecdd3;
+      border-radius: 12px;
+      font-weight: 900;
+      font-size: 28px;
+    }
+    
+    .tile.ok {
+      border-color: #22c55e;
+      box-shadow: 0 3px 0 #22c55e55;
+    }
+    
+    .tile.bad {
+      border-color: #ef4444;
+      box-shadow: 0 3px 0 #ef444455;
+    }
+    
+    .tile .feedback {
+      font-size: 12px;
+      margin-top: 4px;
+      font-weight: 900;
+    }
+    
+    .tile-input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .tile-feedback {
+      font-size: 12px;
+      font-weight: 900;
+      height: 16px;
+    }
+    
+    .tile-feedback.correct {
+      color: var(--success);
+    }
+    
+    .tile-feedback.incorrect {
+      color: var(--error);
+    }
+    
+    /* Nuevos estilos para la sección de descomposición */
+    .decomposition-section {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f0f9ff;
+      border-radius: 12px;
+      border: 2px solid #0ea5e9;
+    }
+    
+    .decomposition-section h3 {
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .decomposition-section h3::before {
+      content: "✏️";
+    }
+    
+    .decomposition-input {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .decomposition-input label {
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .decomposition-input .input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .decomposition-input input {
+      flex: 1;
+      padding: 12px;
+      border: 3px solid #fecdd3;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    
+    .decomposition-input input:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    }
+    
+    .decomposition-input input.correct {
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+    
+    .decomposition-input input.incorrect {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+    
+    .decomposition-feedback {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+    
+    .decomposition-feedback.correct {
+      color: var(--success);
+    }
+    
+    .decomposition-feedback.incorrect {
+      color: var(--error);
+    }
+    
+    .decomposition-feedback-icon {
+      font-size: 18px;
+    }
+    
+    .decomposition-hint {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel" id="configPanel">
+      <h2>Ábaco Mágico</h2>
+      <div class="controls">
+        <div class="rowc">
+          <label for="rowsRange">Filas (magnitudes):</label>
+          <input id="rowsRange" type="range" min="1" max="8" value="4">
+          <span class="pill"><strong id="rowsVal">4</strong> filas</span>
+        </div>
+        <div class="rowc">
+          <span class="pill">Haz clic en una bolita para activar todas desde esa posición hacia la derecha</span>
+        </div>
+        <div class="rowc">
+          <button class="btn" id="resetBtn">Reiniciar</button>
+          <button class="btn secondary" id="zeroRightBtn">⬆Quitar filas vacías</button>
+        </div>
+        
+        <div class="magnitude-inputs hidden" id="magnitudeInputs">
+          <div class="magnitude-input">
+            <label for="thousandInput">Unidad de millar (UM)</label>
+            <input type="number" id="thousandInput" min="0" max="9" value="0">
+          </div>
+          <div class="magnitude-input">
+            <label for="hundredInput">Centena (C)</label>
+            <input type="number" id="hundredInput" min="0" max="9" value="0">
+          </div>
+          <div class="magnitude-input">
+            <label for="tenInput">Decena (D)</label>
+            <input type="number" id="tenInput" min="0" max="9" value="0">
+          </div>
+          <div class="magnitude-input">
+            <label for="unitInput">Unidad (U)</label>
+            <input type="number" id="unitInput" min="0" max="9" value="0">
+          </div>
+        </div>
+        
+        <div class="toggle-buttons">
+          <button class="btn secondary" id="toggleSumBtn">Mostrar suma</button>
+          <button class="btn secondary" id="toggleMagnitudesBtn">Mostrar magnitudes</button>
+        </div>
+        
+        <div class="total-display" id="totalDisplay">
+          <div class="muted">Suma de los valores</div>
+          <div class="big" id="sumValue">0</div>
+        </div>
+        
+        <div class="number-input">
+          <input type="text" id="numberInput" placeholder="Escribe un número completo" min="0" value="0">
+        </div>
+        
+        <div class="number-controls">
+          <button class="btn info" id="setNumberBtn">Aplicar número</button>
+          <button class="btn secondary" id="toggleNumberBtn">Ocultar número</button>
+        </div>
+      </div>
+      
+      <!-- Nueva sección de número formado -->
+      <div class="number-section">
+        <h3>Número formado</h3>
+        <div class="tiles" id="tiles">
+        </div>
+        
+        <details class="collapsible" id="resDetails" open>
+          <summary class="muted">Resultado</summary>
+          <div class="content">
+            <div id="result" class="result big">0</div>
+          </div>
+        </details>
+      </div>
+      
+      <!-- Nueva sección de descomposición -->
+      <div class="decomposition-section">
+        <h3>Descomponer el número</h3>
+        <div class="decomposition-input">
+          <label for="decompositionInput">Escribe la suma en forma desarrollada (ej: 50 + 4)</label>
+          <div class="input-container">
+            <input type="text" id="decompositionInput" placeholder="Ej: 50 + 4">
+          </div>
+          <details class="collapsible" id="expDetails" open>
+          <summary class="muted">Forma desarrollada</summary>
+          <div class="content">
+            <div id="expanded" class="expanded">0</div>
+          </div>
+        </details>
+        </div>
+      </div>
+      
+      <hr style="border:none;border-top:2px dashed #fecdd3;margin:14px 0">
+      
+      <div class="breakdown-table">
+        <table aria-label="Desglose por fila">
+          <thead>
+            <tr>
+              <th>Magnitud</th>
+              <th>Bolitas activas</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="breakdown">
+            <tr><td>Unidades</td><td>0</td><td>1</td></tr>
+            <tr><td>Decenas</td><td>0</td><td>10</td></tr>
+            <tr><td>Centenas</td><td>0</td><td>100</td></tr>
+            <tr><td>Unidades de millar</td><td>0</td><td>1,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel" id="abacusPanel">
+      <h2>¡Juega y aprende!</h2>
+      <div class="abacus" id="abacus">
+        <div class="frame"></div>
+        <div class="separator-v" id="separatorV"></div>
+        <div class="rows" id="rows">
+          <!-- Las filas y bolitas se generan dinámicamente con JavaScript -->
+        </div>
+      </div>
+      
+      <div class="instructions">
+        <h3>¿Cómo funciona?</h3>
+        <p><strong>Nueva funcionalidad:</strong> Haz clic en cualquier bolita y todas las bolitas desde esa posición hacia la derecha se moverán automáticamente a la derecha.</p>
+        <p><strong>Sistema de acarreo:</strong> Cuando activas la primera bolita de una magnitud superior (ej: decenas), todas las bolitas de las magnitudes inferiores (unidades) se regresan al lado izquierdo automáticamente.</p>
+        <p>Cada fila representa un valor diferente: unidades, decenas, centenas, etc. El número total se calcula sumando los valores de todas las filas.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <script>
+    (function(){
+      const rowsWrap = document.getElementById('rows');
+      const abacus = document.getElementById('abacus');
+      const sepV = document.getElementById('separatorV');
+      const rowsRange = document.getElementById('rowsRange');
+      const rowsVal = document.getElementById('rowsVal');
+      const breakdownBody = document.getElementById('breakdown');
+      const resetBtn = document.getElementById('resetBtn');
+      const zeroRightBtn = document.getElementById('zeroRightBtn');
+      const numberInput = document.getElementById('numberInput');
+      const setNumberBtn = document.getElementById('setNumberBtn');
+      const feedback = document.getElementById('feedback');
+      
+      // Nuevos elementos para los campos de magnitud
+      const thousandInput = document.getElementById('thousandInput');
+      const hundredInput = document.getElementById('hundredInput');
+      const tenInput = document.getElementById('tenInput');
+      const unitInput = document.getElementById('unitInput');
+      const sumValue = document.getElementById('sumValue');
+      const totalDisplay = document.getElementById('totalDisplay');
+      const toggleSumBtn = document.getElementById('toggleSumBtn');
+      
+      // Nuevos elementos para las funcionalidades agregadas
+      const magnitudeInputs = document.getElementById('magnitudeInputs');
+      const toggleMagnitudesBtn = document.getElementById('toggleMagnitudesBtn');
+      const toggleNumberBtn = document.getElementById('toggleNumberBtn');
+      
+      // Elementos para la nueva sección de número formado
+      const tiles = document.getElementById('tiles');
+      const expanded = document.getElementById('expanded');
+      const result = document.getElementById('result');
+      
+      // Elementos para la nueva sección de descomposición
+      const decompositionInput = document.getElementById('decompositionInput');
+      const decompositionFeedback = document.getElementById('decompositionFeedback');
+
+      const MAGNITUDE_NAMES = ['Unidades', 'Decenas', 'Centenas', 'Unidades de millar'];
+      const MAGNITUDE_LETTERS = ['U', 'D', 'C', 'UM'];
+      const COLORS = ['#60a5fa','#f472b6','#34d399','#f59e0b','#a78bfa','#fb7185','#22d3ee','#fbbf24'];
+
+      let R = 4;
+      let state = [];
+      let layout = {};
+      let showSum = false;
+      let showMagnitudes = false;
+      let showNumber = true;
+
+      function showFeedback(message, isSuccess = true) {
+        feedback.textContent = message;
+        feedback.style.background = isSuccess ? '#10b981' : '#ef4444';
+        feedback.className = 'feedback' + (isSuccess ? ' show' : ' error show');
+        
+        setTimeout(() => {
+          feedback.classList.remove('show');
+        }, 2000);
+      }
+
+      function toggleMagnitudesVisibility() {
+        showMagnitudes = !showMagnitudes;
+        if (showMagnitudes) {
+          magnitudeInputs.classList.remove('hidden');
+          toggleMagnitudesBtn.textContent = 'Ocultar magnitudes';
+        } else {
+          magnitudeInputs.classList.add('hidden');
+          toggleMagnitudesBtn.textContent = 'Mostrar magnitudes';
+        }
+      }
+
+      function toggleNumberVisibility() {
+        showNumber = !showNumber;
+        if (showNumber) {
+          numberInput.style.display = 'block';
+          setNumberBtn.style.display = 'flex';
+          toggleNumberBtn.textContent = 'Ocultar número';
+        } else {
+          numberInput.style.display = 'none';
+          setNumberBtn.style.display = 'none';
+          toggleNumberBtn.textContent = 'Mostrar número';
+        }
+      }
+
+      function shade(hex, p){
+        const f=parseInt(hex.slice(1),16), t=p<0?0:255, P=p<0?p*-1:p, R=f>>16, G=f>>8&0x00FF, B=f&0x0000FF;
+        return '#' + (0x1000000 + (Math.round((t-R)*P)+R)*0x10000 + (Math.round((t-G)*P)+G)*0x100 + (Math.round((t-B)*P)+B)).toString(16).slice(1);
+      }
+
+      function build(n){
+        rowsWrap.innerHTML = ''; state = [];
+        for(let i=0;i<n;i++){
+          const idx = i;
+          const color = COLORS[i % COLORS.length];
+          const row = document.createElement('div'); row.className='row'; row.dataset.row = idx;
+          row.innerHTML = '<div class="rod-line"></div>';
+          rowsWrap.appendChild(row);
+
+          const left = document.createElement('div'); left.className='side-label label-left'; left.textContent='Izquierda = 0'; row.appendChild(left);
+          const right = document.createElement('div'); right.className='side-label label-right'; 
+          right.textContent = `Derecha = ${MAGNITUDE_LETTERS[i] || '?'}`;
+          row.appendChild(right);
+
+          for(let j=0;j<10;j++){ // 10 bolitas
+            const bead = document.createElement('div'); bead.className='bead'; bead.dataset.row=idx; bead.dataset.idx=j; bead.dataset.active='false';
+            const c1 = shade(color, -0.15); const c2 = shade(color, 0.05);
+            bead.style.background = `radial-gradient(120% 120% at 30% 30%, #ffffffaa 0, #ffffff00 48%), linear-gradient(180deg, ${c2}, ${c1})`;
+            bead.style.boxShadow = '0 6px 16px rgba(0,0,0,.25), inset 0 -6px 10px rgba(0,0,0,.25), inset 0 4px 10px rgba(255,255,255,.35)';
+            row.appendChild(bead); enableClick(bead);
+          }
+          state[idx] = {active:0};
+        }
+
+        queueMicrotask(()=>{ measure(); arrangeAll(); updateAllInputs(); renderBreakdown(); renderTiles(); });
+      }
+
+      function measure(){
+        const rectA = abacus.getBoundingClientRect(); const rectS = sepV.getBoundingClientRect();
+        layout.sepX = rectS.left - rectA.left + rectS.width/2;
+      }
+      window.addEventListener('resize', ()=>{ measure(); arrangeAll(); });
+
+      function arrangeRow(rowIdx){
+        const rowEl = rowsWrap.querySelector(`.row[data-row="${rowIdx}"]`);
+        const beads = [...rowEl.querySelectorAll('.bead')];
+        const active = beads.filter(b=>b.dataset.active==='true');
+        const inactive = beads.filter(b=>b.dataset.active!=='true');
+        const padding = 28; const spacing = 40;
+        const leftStart = padding;
+        const rightStart = abacus.clientWidth - padding - spacing;
+        inactive.forEach((b,i)=>{ b.style.left = (leftStart + i*spacing) + 'px'; });
+        active.forEach((b,i)=>{ b.style.left = (rightStart - i*spacing) + 'px'; });
+      }
+      function arrangeAll(){ for(let r=0;r<R; r++) arrangeRow(r); }
+
+      function enableClick(el){
+        el.addEventListener('click', (ev) => {
+          const row = Number(el.dataset.row);
+          const idx = Number(el.dataset.idx);
+          
+          // Activar todas las bolitas desde la posición clickeada hacia la derecha
+          const rowEl = rowsWrap.querySelector(`.row[data-row="${row}"]`);
+          const beads = [...rowEl.querySelectorAll('.bead')];
+          
+          beads.forEach((bead, i) => {
+            // Si el índice de la bolita es >= al índice clickeado, activarla
+            bead.dataset.active = i >= idx ? 'true' : 'false';
+          });
+          
+          arrangeRow(row);
+          updateRowState(row);
+          
+          // Sistema de acarreo: si se activa la primera bolita de una magnitud superior,
+          // reiniciar todas las magnitudes inferiores
+          if (idx === 9 && beads[9].dataset.active === 'true' && row > 0) {
+            // Se activó la primera bolita (posición 9) de una fila superior
+            for (let i = 0; i < row; i++) {
+              const lowerRowEl = rowsWrap.querySelector(`.row[data-row="${i}"]`);
+              const lowerBeads = [...lowerRowEl.querySelectorAll('.bead')];
+              lowerBeads.forEach(bead => bead.dataset.active = 'false');
+              updateRowState(i);
+              arrangeRow(i);
+            }
+            showFeedback(`¡Acarreo! ${MAGNITUDE_NAMES[row]} activada, ${MAGNITUDE_NAMES[row-1]} reiniciada`);
+          }
+          
+          updateAllInputs();
+          renderBreakdown();
+          renderTiles();
+          
+          const activeCount = beads.filter(b => b.dataset.active === 'true').length;
+          showFeedback(`Fila ${MAGNITUDE_NAMES[row]}: ${activeCount} bolitas activadas`);
+        });
+      }
+
+      function updateRowState(row){
+        const rowEl = rowsWrap.querySelector(`.row[data-row="${row}"]`);
+        const count = rowEl.querySelectorAll('.bead[data-active="true"]').length; 
+        state[row].active = Math.min(count, 10);
+      }
+
+      function valueOfRow(row){ 
+        // Para la primera bolita (posición 9) cuenta como 1, la segunda (8) como 2, etc.
+        return Math.min(state[row]?.active||0, 10); 
+      }
+
+      function updateTotals(){ 
+        let total=0; 
+        for(let i=0;i<R;i++){ 
+          total += valueOfRow(i) * Math.pow(10, i); 
+        } 
+        return total; 
+      }
+
+      function renderBreakdown(){
+        breakdownBody.innerHTML=''; 
+        for(let i=0;i<R;i++){ 
+          const tr=document.createElement('tr'); 
+          tr.innerHTML=`<td>${MAGNITUDE_NAMES[i]||('10^'+i)}</td><td>${valueOfRow(i)}</td><td>${(Math.pow(10,i)).toLocaleString('es-MX')}</td>`; 
+          breakdownBody.appendChild(tr);
+        } 
+      }
+      
+      function renderTiles() {
+        const total = updateTotals();
+        const parts = [];
+        
+        // Limpiar tiles
+        tiles.innerHTML = '';
+        
+        // Crear tiles para cada magnitud
+        for(let i = R-1; i >= 0; i--) {
+          const digit = valueOfRow(i);
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          
+          // Crear contenedor para input y feedback
+          const tileInputContainer = document.createElement('div');
+          tileInputContainer.className = 'tile-input-container';
+          
+          // Crear abreviatura
+          const abbr = document.createElement('div');
+          abbr.className = 'abbr';
+          abbr.textContent = MAGNITUDE_LETTERS[i] || '?';
+          
+          // Crear input para el dígito
+          const digitInput = document.createElement('input');
+          digitInput.className = 'digit-input';
+          digitInput.type = 'text';
+          digitInput.maxLength = 1;
+          digitInput.dataset.magnitude = i;
+          digitInput.value = '';
+          
+          // Crear elemento de feedback
+          const tileFeedback = document.createElement('div');
+          tileFeedback.className = 'tile-feedback';
+          
+          // Agregar event listener para validación
+          digitInput.addEventListener('input', function() {
+            validateTileInput(this);
+          });
+          
+          // Agregar elementos al contenedor
+          tileInputContainer.appendChild(abbr);
+          tileInputContainer.appendChild(digitInput);
+          tileInputContainer.appendChild(tileFeedback);
+          
+          // Agregar contenedor al tile
+          tile.appendChild(tileInputContainer);
+          tiles.appendChild(tile);
+          
+          // Agregar a la forma desarrollada si el dígito no es 0
+          const value = digit * Math.pow(10, i);
+          if(value > 0) {
+            parts.push(value.toLocaleString('es-MX'));
+          }
+        }
+        
+        // Actualizar forma desarrollada
+        expanded.textContent = parts.length ? parts.join(' + ') : '0';
+        
+        // Actualizar resultado
+        result.textContent = total.toLocaleString('es-MX');
+        
+        // Limpiar la entrada de descomposición cuando cambia el número
+        decompositionInput.value = '';
+        decompositionInput.classList.remove('correct', 'incorrect');
+        decompositionFeedback.textContent = '';
+        decompositionFeedback.className = 'decomposition-feedback';
+      }
+      
+      function validateTileInput(inputElement) {
+        const magnitude = parseInt(inputElement.dataset.magnitude);
+        const userValue = parseInt(inputElement.value) || 0;
+        const actualValue = valueOfRow(magnitude);
+        
+        const tile = inputElement.closest('.tile');
+        const feedbackElement = tile.querySelector('.tile-feedback');
+        
+        // Limitar a un solo dígito
+        if (inputElement.value.length > 1) {
+          inputElement.value = inputElement.value.slice(0, 1);
+        }
+        
+        // Permitir solo números
+        if (isNaN(userValue) && inputElement.value !== '') {
+          inputElement.value = '';
+          tile.classList.remove('ok', 'bad');
+          feedbackElement.textContent = '';
+          feedbackElement.classList.remove('correct', 'incorrect');
+          return;
+        }
+        
+        if (inputElement.value === '') {
+          tile.classList.remove('ok', 'bad');
+          feedbackElement.textContent = '';
+          feedbackElement.classList.remove('correct', 'incorrect');
+        } else if (userValue === actualValue) {
+          tile.classList.add('ok');
+          tile.classList.remove('bad');
+          feedbackElement.textContent = '✓';
+          feedbackElement.classList.add('correct');
+          feedbackElement.classList.remove('incorrect');
+        } else {
+          tile.classList.add('bad');
+          tile.classList.remove('ok');
+          feedbackElement.textContent = '✗';
+          feedbackElement.classList.add('incorrect');
+          feedbackElement.classList.remove('correct');
+        }
+      }
+      
+      function updateAllInputs() {
+        const total = updateTotals();
+        
+        // Actualizar los campos de magnitud
+        if (R >= 4) {
+          unitInput.value = valueOfRow(0);
+          tenInput.value = valueOfRow(1);
+          hundredInput.value = valueOfRow(2);
+          thousandInput.value = valueOfRow(3);
+        }
+        
+        // Actualizar la suma
+        sumValue.textContent = total.toLocaleString('es-MX');
+        
+        // Actualizar el campo de número completo
+        numberInput.value = total;
+      }
+      
+      function updateAbacusFromInputs() {
+        const values = [
+          parseInt(unitInput.value) || 0,
+          parseInt(tenInput.value) || 0,
+          parseInt(hundredInput.value) || 0,
+          parseInt(thousandInput.value) || 0
+        ];
+        
+        // Validar que no sean negativos
+        values.forEach((val, i) => {
+          if (val < 0) {
+            values[i] = 0;
+            showFeedback('No se permiten valores negativos', false);
+          }
+        });
+        
+        // Actualizar el ábaco con los valores de los inputs
+        for (let i = 0; i < R; i++) {
+          const rowEl = rowsWrap.querySelector(`.row[data-row="${i}"]`);
+          const beads = [...rowEl.querySelectorAll('.bead')];
+          
+          // Calcular cuántas bolitas deben estar activas
+          const digit = values[i] || 0;
+          const activeCount = Math.min(digit, 10);
+          
+          // Activar las bolitas desde la posición (10 - activeCount) hacia la derecha
+          beads.forEach((bead, j) => {
+            bead.dataset.active = j >= (10 - activeCount) ? 'true' : 'false';
+          });
+          
+          state[i].active = activeCount;
+          arrangeRow(i);
+        }
+        
+        updateAllInputs();
+        renderBreakdown();
+        renderTiles();
+        showFeedback('Ábaco actualizado con los valores ingresados');
+      }
+
+      function reset(){ 
+        rowsWrap.querySelectorAll('.bead').forEach(b=>b.dataset.active='false'); 
+        for(let i=0;i<R;i++){ 
+          state[i].active=0; 
+          arrangeRow(i);
+        } 
+        updateAllInputs();
+        renderBreakdown();
+        renderTiles();
+        showFeedback('¡Ábaco reiniciado!');
+      }
+      
+      function trimTopEmpty(){ 
+        let top=R-1; 
+        while(top>0 && valueOfRow(top)===0) top--; 
+        const newR=top+1; 
+        if(newR!==R){ 
+          R=newR; 
+          rowsRange.value=String(newR); 
+          rowsVal.textContent=newR; 
+          build(newR); 
+          showFeedback(`Ahora tienes ${newR} filas`);
+        } else {
+          showFeedback('No hay filas vacías para eliminar', false);
+        }
+      }
+      
+      function setNumber() {
+        const number = parseInt(numberInput.value);
+        if (isNaN(number) || number < 0) {
+          showFeedback('Por favor, escribe un número válido (no negativo)', false);
+          return;
+        }
+        
+        if (number > Math.pow(10, R) - 1) {
+          showFeedback(`El número es demasiado grande para ${R} filas`, false);
+          return;
+        }
+        
+        // Reset all beads
+        rowsWrap.querySelectorAll('.bead').forEach(b => b.dataset.active = 'false');
+        
+        // Set beads according to the number
+        let remaining = number;
+        for (let i = 0; i < R; i++) {
+          const power = Math.pow(10, i);
+          const digit = Math.floor(remaining / power) % 10;
+          
+          const rowEl = rowsWrap.querySelector(`.row[data-row="${i}"]`);
+          const beads = [...rowEl.querySelectorAll('.bead')];
+          
+          // Activar las bolitas desde la posición (10 - digit) hacia la derecha
+          const startPosition = 10 - digit;
+          beads.forEach((bead, j) => {
+            bead.dataset.active = j >= startPosition ? 'true' : 'false';
+          });
+          
+          state[i].active = digit;
+          arrangeRow(i);
+        }
+        
+        updateAllInputs();
+        renderBreakdown();
+        renderTiles();
+        showFeedback(`Número ${number.toLocaleString('es-MX')} aplicado al ábaco`);
+      }
+
+      function toggleSumDisplay() {
+        showSum = !showSum;
+        if (showSum) {
+          totalDisplay.classList.add('show');
+          toggleSumBtn.textContent = 'Ocultar suma';
+        } else {
+          totalDisplay.classList.remove('show');
+          toggleSumBtn.textContent = 'Mostrar suma';
+        }
+      }
+      
+      // Función para validar la descomposición
+      function validateDecomposition() {
+        const userInput = decompositionInput.value.trim();
+        const total = updateTotals();
+        
+        if (userInput === '') {
+          decompositionInput.classList.remove('correct', 'incorrect');
+          decompositionFeedback.textContent = '';
+          decompositionFeedback.className = 'decomposition-feedback';
+          return;
+        }
+        
+        // Separar los términos por "+"
+        const terms = userInput.split('+').map(term => term.trim());
+        
+        // Verificar que todos los términos sean números válidos
+        let isValid = true;
+        let sum = 0;
+        
+        for (const term of terms) {
+          const num = parseInt(term);
+          if (isNaN(num)) {
+            isValid = false;
+            break;
+          }
+          sum += num;
+        }
+        
+        if (!isValid) {
+          decompositionInput.classList.add('incorrect');
+          decompositionInput.classList.remove('correct');
+          decompositionFeedback.innerHTML = '<span class="decomposition-feedback-icon">❌</span> Formato incorrecto. Usa números separados por "+"';
+          decompositionFeedback.className = 'decomposition-feedback incorrect';
+          return;
+        }
+        
+        // Comparar con el total
+        if (sum === total) {
+          decompositionInput.classList.add('correct');
+          decompositionInput.classList.remove('incorrect');
+          decompositionFeedback.innerHTML = '<span class="decomposition-feedback-icon">✅</span> ¡Correcto! Has descompuesto el número correctamente';
+          decompositionFeedback.className = 'decomposition-feedback correct';
+        } else {
+          decompositionInput.classList.add('incorrect');
+          decompositionInput.classList.remove('correct');
+          decompositionFeedback.innerHTML = `<span class="decomposition-feedback-icon">❌</span> Incorrecto. La suma es ${sum}, pero debería ser ${total}`;
+          decompositionFeedback.className = 'decomposition-feedback incorrect';
+        }
+      }
+
+      // Event listeners para los campos de magnitud
+      thousandInput.addEventListener('input', () => {
+        if (thousandInput.value < 0) thousandInput.value = 0;
+        if (thousandInput.value > 9) thousandInput.value = 9;
+        updateAbacusFromInputs();
+      });
+      
+      hundredInput.addEventListener('input', () => {
+        if (hundredInput.value < 0) hundredInput.value = 0;
+        if (hundredInput.value > 9) hundredInput.value = 9;
+        updateAbacusFromInputs();
+      });
+      
+      tenInput.addEventListener('input', () => {
+        if (tenInput.value < 0) tenInput.value = 0;
+        if (tenInput.value > 9) tenInput.value = 9;
+        updateAbacusFromInputs();
+      });
+      
+      unitInput.addEventListener('input', () => {
+        if (unitInput.value < 0) unitInput.value = 0;
+        if (unitInput.value > 9) unitInput.value = 9;
+        updateAbacusFromInputs();
+      });
+
+      numberInput.addEventListener('input', () => {
+        if (numberInput.value < 0) numberInput.value = 0;
+      });
+      
+      // Event listener para la entrada de descomposición
+      decompositionInput.addEventListener('input', validateDecomposition);
+
+      // Event listeners para las nuevas funcionalidades
+      toggleMagnitudesBtn.addEventListener('click', toggleMagnitudesVisibility);
+      toggleNumberBtn.addEventListener('click', toggleNumberVisibility);
+
+      numberInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          setNumber();
+        }
+      });
+
+      rowsRange.addEventListener('input', (e)=>{ 
+        R=Number(e.target.value); 
+        rowsVal.textContent=R; 
+        build(R); 
+        showFeedback(`Ahora tienes ${R} filas`);
+      });
+      
+      resetBtn.addEventListener('click', reset);
+      zeroRightBtn.addEventListener('click', trimTopEmpty);
+      setNumberBtn.addEventListener('click', setNumber);
+      toggleSumBtn.addEventListener('click', toggleSumDisplay);
+      
+      build(R);
+    })();
+  </script>
+</body>
+</html>
